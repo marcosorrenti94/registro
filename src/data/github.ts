@@ -3,7 +3,13 @@ import type { Database } from '@/domain/types';
 import { normalizeDatabase } from '@/domain/defaults';
 import { base64ToUtf8, utf8ToBase64 } from './base64';
 import type { GitHubConnection } from './connection';
-import { AuthError, ConflictError, PrivacyError, type RemoteRepository, type RemoteSnapshot } from './repository';
+import {
+  AuthError,
+  ConflictError,
+  PrivacyError,
+  type RemoteRepository,
+  type RemoteSnapshot,
+} from './repository';
 
 /** Ogni quanto ricontrollare che il repository dei dati sia ancora privato. */
 const PRIVACY_CHECK_MS = 5 * 60 * 1000;

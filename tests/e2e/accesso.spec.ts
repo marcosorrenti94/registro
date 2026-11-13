@@ -90,7 +90,7 @@ test('configurazione: verifica il repository e crea un file che si apre con la p
   await fakeGitHub(page);
 
   await page.goto('/');
-  await expect(page.getByText("L'accesso non è ancora configurato")).toBeVisible();
+  await expect(page.getByText("L'accesso con password non è ancora configurato")).toBeVisible();
   await page.getByRole('button', { name: "Configura l'accesso" }).click();
 
   await page.getByLabel('Proprietario (utente o organizzazione)').fill(OWNER);

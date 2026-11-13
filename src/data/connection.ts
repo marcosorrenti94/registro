@@ -28,7 +28,13 @@ export function loadConnection(): Connection | null {
     const c = JSON.parse(raw) as Partial<Omit<GitHubConnection, 'kind'>> & { kind?: string };
     if (c.kind === 'local') return LOCAL_MODE_AVAILABLE ? { kind: 'local' } : null;
     if (!c.owner || !c.repo || !c.token) return null;
-    return { kind: 'github', owner: c.owner, repo: c.repo, token: c.token, ...(c.branch ? { branch: c.branch } : {}) };
+    return {
+      kind: 'github',
+      owner: c.owner,
+      repo: c.repo,
+      token: c.token,
+      ...(c.branch ? { branch: c.branch } : {}),
+    };
   } catch {
     return null;
   }

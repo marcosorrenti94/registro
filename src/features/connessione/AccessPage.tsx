@@ -76,10 +76,15 @@ export function AccessPage({
             <LoaderCircle className="size-4 animate-spin" aria-hidden /> Un momento…
           </p>
         ) : access.status !== 'ok' ? (
-          <div className="mt-4 rounded-xl bg-warn-soft p-4 text-sm text-warn" role="status">
-            {access.status === 'missing'
-              ? "L'accesso non è ancora configurato. Chi gestisce l'app deve creare il file di accesso."
-              : access.message}
+          <div className="mt-4 grid gap-4">
+            <p className="rounded-xl bg-surface-2 p-4 text-sm text-ink-2" role="status">
+              {access.status === 'missing'
+                ? "L'accesso con password non è ancora configurato: per ora si entra con il token del repository dei dati."
+                : access.message}
+            </p>
+            <Button size="lg" className="w-full justify-center" onClick={onToken}>
+              Accedi con il token
+            </Button>
           </div>
         ) : (
           <form

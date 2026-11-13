@@ -65,7 +65,13 @@ export function mergeDatabases(base: Database | null, local: Database, remote: D
   const db: Database = {
     ...remote,
     settings: settings.value ?? local.settings,
-    categories: mergeRecords(b.categories, local.categories, remote.categories, (_k, c) => `Categoria ${c.name}`, conflicts),
+    categories: mergeRecords(
+      b.categories,
+      local.categories,
+      remote.categories,
+      (_k, c) => `Categoria ${c.name}`,
+      conflicts,
+    ),
     days: mergeRecords(b.days, local.days, remote.days, (k) => `Entrate del ${formatDateIt(k)}`, conflicts),
     expenses: mergeRecords(
       b.expenses,

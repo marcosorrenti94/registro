@@ -99,7 +99,8 @@ export async function deleteDraft(connectionKey: string, date: IsoDate): Promise
 /** Chiede al browser di non cancellare i dati locali in caso di poco spazio. */
 export async function requestPersistentStorage(): Promise<void> {
   try {
-    if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist();
+    if (navigator.storage?.persist && !(await navigator.storage.persisted()))
+      await navigator.storage.persist();
   } catch {
     /* non supportato */
   }

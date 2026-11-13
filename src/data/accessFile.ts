@@ -79,10 +79,18 @@ export async function createEntry(
 }
 
 /** Restituisce il contenuto della voce, o null se la password non è quella giusta. */
-export async function openEntry(entry: AccessEntry, password: string, iterations: number): Promise<AccessSecret | null> {
+export async function openEntry(
+  entry: AccessEntry,
+  password: string,
+  iterations: number,
+): Promise<AccessSecret | null> {
   try {
     const key = await deriveKey(normalize(password), fromBase64(entry.salt), iterations);
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64(entry.iv) }, key, fromBase64(entry.data));
+    const plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(entry.iv) },
+      key,
+      fromBase64(entry.data),
+    );
     const secret = JSON.parse(dec.decode(plain)) as Partial<AccessSecret>;
     if (!secret.owner || !secret.repo || !secret.token) return null;
     return { label: secret.label ?? '', owner: secret.owner, repo: secret.repo, token: secret.token };
@@ -136,7 +144,9 @@ export function parseAccessFile(text: string): AccessFile {
     f.kdf.iterations >= 100_000 &&
     Array.isArray(f.entries) &&
     f.entries.length > 0 &&
-    f.entries.every((e) => typeof e?.salt === 'string' && typeof e.iv === 'string' && typeof e.data === 'string');
+    f.entries.every(
+      (e) => typeof e?.salt === 'string' && typeof e.iv === 'string' && typeof e.data === 'string',
+    );
   if (!ok) throw new AccessFileError('Il file di accesso non è valido.');
   return f as AccessFile;
 }
