@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/manrope';
+@import '@fontsource-variable/bricolage-grotesque';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Token di colore: chiaro di default, scuro con la classe .dark su <html> */
+:root {
+  --paper: #f5f4f7;
+  --surface: #ffffff;
+  --surface-2: #efedf2;
+  --line: #e0dce5;
+  --line-strong: #c9c2d1;
+  --ink: #231b26;
+  --ink-2: #5b5262;
+  --ink-3: #6e6575;
+  --plum: #6d2f57;
+  --plum-strong: #57223f;
+  --plum-soft: #f3e8ef;
+  --on-plum: #ffffff;
+  --contanti: #1a8458;
+  --carta: #3d6fb4;
+  --varie: #a8771f;
+  --uscite: #b23a48;
+  --uscite-soft: #fbeef0;
+  --ok: #2f7d5b;
+  --ok-soft: #e8f3ed;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --focus: #6d2f57;
+  color-scheme: light;
+}
+
+.dark {
+  --paper: #161118;
+  --surface: #201a23;
+  --surface-2: #2a222e;
+  --line: #3a3040;
+  --line-strong: #514557;
+  --ink: #f1ebf3;
+  --ink-2: #c7bccb;
+  --ink-3: #a99dae;
+  --plum: #d995bd;
+  --plum-strong: #e7b3d1;
+  --plum-soft: #3a2233;
+  --on-plum: #2a0f20;
+  --contanti: #2fa774;
+  --carta: #5b8ee0;
+  --varie: #b8862a;
+  --uscite: #f08a96;
+  --uscite-soft: #3b1f25;
+  --ok: #5fc196;
+  --ok-soft: #1c3127;
+  --warn: #e0b25a;
+  --warn-soft: #3a2f17;
+  --focus: #e7b3d1;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Manrope Variable', ui-sans-serif, sans-serif;
+
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-plum: var(--plum);
+  --color-plum-strong: var(--plum-strong);
+  --color-plum-soft: var(--plum-soft);
+  --color-on-plum: var(--on-plum);
+  --color-contanti: var(--contanti);
+  --color-carta: var(--carta);
+  --color-varie: var(--varie);
+  --color-uscite: var(--uscite);
+  --color-uscite-soft: var(--uscite-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  /* Niente zoom col doppio tocco né ritardo sui pulsanti */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Pulsante Salva: sopra la barra in basso e la zona del tasto Home dell'iPhone */
+.save-bar {
+  bottom: calc(4rem + env(safe-area-inset-bottom) + 0.75rem);
+}
+@media (min-width: 1024px) {
+  .save-bar {
+    bottom: 1.5rem;
+  }
+}
+
+/* Con la tastiera aperta (iPhone) la barra in basso sparisce e Salva resta sopra la tastiera */
+html.kb-open .bottom-nav {
+  display: none;
+}
+html.kb-open .save-bar {
+  bottom: calc(var(--kb-inset, 0px) + 0.75rem);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--paper);
+  font-family: var(--font-sans);
+  font-feature-settings: 'tnum' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Giorno di chiusura nel calendario: tratteggio diagonale discreto */
+.hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--line-strong) 45%, transparent) 6px 7px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

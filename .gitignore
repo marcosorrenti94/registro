@@ -1,0 +1,23 @@
+node_modules
+dist
+dev-dist
+coverage
+playwright-report
+test-results
+*.local
+.env
+.env.*
+.DS_Store
+
+# Mai committare dati reali nel repository pubblico
+*.xlsx
+*.xls
+*.csv
+tests/fixtures/private/
+data/
+backup*.json
+registro-backup*.json
+
+# Anteprima locale
+!.env.anteprima
+dist-anteprima
