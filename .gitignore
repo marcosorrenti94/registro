@@ -14,7 +14,7 @@ test-results
 *.xls
 *.csv
 tests/fixtures/private/
-data/
+/data/
 backup*.json
 registro-backup*.json
 
