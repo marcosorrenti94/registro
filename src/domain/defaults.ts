@@ -22,7 +22,6 @@ export const DEFAULT_CATEGORIES: Category[] = [
 
 export const DEFAULT_SETTINGS: Settings = {
   vatRateBps: 2200,
-  vatMode: 'scorporo',
   businessName: 'Parrucchieria',
   closedWeekdays: [0, 1],
 };
@@ -49,7 +48,15 @@ export function normalizeDatabase(raw: unknown): Database {
   const settings = isRecord(raw.settings) ? (raw.settings as Partial<Settings>) : {};
   return {
     schemaVersion: 1,
-    settings: { ...base.settings, ...settings },
+    // Solo i campi noti: i valori di versioni precedenti (es. la vecchia modalità IVA) vengono scartati
+    settings: {
+      vatRateBps: typeof settings.vatRateBps === 'number' ? settings.vatRateBps : base.settings.vatRateBps,
+      businessName:
+        typeof settings.businessName === 'string' ? settings.businessName : base.settings.businessName,
+      closedWeekdays: Array.isArray(settings.closedWeekdays)
+        ? settings.closedWeekdays
+        : base.settings.closedWeekdays,
+    },
     categories: isRecord(raw.categories) ? (raw.categories as Database['categories']) : base.categories,
     days: isRecord(raw.days) ? (raw.days as Database['days']) : {},
     expenses: isRecord(raw.expenses) ? (raw.expenses as Database['expenses']) : {},

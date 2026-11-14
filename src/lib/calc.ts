@@ -16,11 +16,10 @@ export interface DateRange {
 export interface VatResult {
   /** Contanti + Carta (Varie esclusa). */
   lordoImponibile: Cents;
-  /** Base imponibile: in scorporo è il netto IVA, in aggiunta coincide con il lordo. */
-  imponibile: Cents;
+  /** IVA = (Contanti + Carta) × aliquota. */
   iva: Cents;
-  /** In aggiunta: imponibile + IVA. In scorporo coincide con il lordo (l'IVA è già inclusa). */
-  totaleConIva: Cents;
+  /** Netto dopo IVA = (Contanti + Carta) − IVA. */
+  nettoDopoIva: Cents;
 }
 
 export interface PeriodSummary extends VatResult {
@@ -29,12 +28,8 @@ export interface PeriodSummary extends VatResult {
   varie: Cents;
   entrate: Cents;
   uscite: Cents;
-  /** Totale Entrate − Totale Uscite (come nell'Excel). */
+  /** Ricavo Netto = Netto dopo IVA + Varie (le uscite non vengono sottratte). */
   netto: Cents;
-  /** Ricavo Netto − IVA. */
-  nettoDopoIva: Cents;
-  /** Fatturato Dichiarato = imponibile. */
-  fatturatoDichiarato: Cents;
   giorniConEntrate: number;
   /** Σ totali giornalieri > 0 / n° giorni con entrate > 0 (0 se non ci sono giorni). */
   incassoMedioGiornaliero: Cents;
@@ -45,18 +40,20 @@ export interface PeriodSummary extends VatResult {
   giorniCompilati: number;
 }
 
-/** Calcolo IVA secondo l'aliquota e la modalità delle Impostazioni. */
-export function computeVat(
-  lordoImponibile: Cents,
-  settings: Pick<Settings, 'vatRateBps' | 'vatMode'>,
-): VatResult {
-  const bps = settings.vatRateBps;
-  if (settings.vatMode === 'aggiunta') {
-    const iva = divRound(lordoImponibile * bps, 10_000);
-    return { lordoImponibile, imponibile: lordoImponibile, iva, totaleConIva: lordoImponibile + iva };
-  }
-  const imponibile = divRound(lordoImponibile * 10_000, 10_000 + bps);
-  return { lordoImponibile, imponibile, iva: lordoImponibile - imponibile, totaleConIva: lordoImponibile };
+/** IVA = (Contanti + Carta) × aliquota, arrotondata al centesimo; Netto dopo IVA = (Contanti + Carta) − IVA. */
+export function computeVat(lordoImponibile: Cents, settings: Pick<Settings, 'vatRateBps'>): VatResult {
+  const iva = divRound(lordoImponibile * settings.vatRateBps, 10_000);
+  return { lordoImponibile, iva, nettoDopoIva: lordoImponibile - iva };
+}
+
+/** Ricavo Netto = Netto dopo IVA + Varie. */
+export function ricavoNetto(
+  contanti: Cents,
+  carta: Cents,
+  varie: Cents,
+  settings: Pick<Settings, 'vatRateBps'>,
+): Cents {
+  return computeVat(contanti + carta, settings).nettoDopoIva + varie;
 }
 
 export function entryIncome(entry: DailyEntry | undefined): Cents {
@@ -110,7 +107,6 @@ export function summarize(input: CalcInput, range?: DateRange): PeriodSummary {
   }
 
   const entrate = contanti + carta + varie;
-  const netto = entrate - uscite;
   const vat = computeVat(contanti + carta, input.settings);
   return {
     contanti,
@@ -118,10 +114,8 @@ export function summarize(input: CalcInput, range?: DateRange): PeriodSummary {
     varie,
     entrate,
     uscite,
-    netto,
+    netto: vat.nettoDopoIva + varie,
     ...vat,
-    nettoDopoIva: netto - vat.iva,
-    fatturatoDichiarato: vat.imponibile,
     giorniConEntrate,
     incassoMedioGiornaliero: giorniConEntrate ? divRound(sommaGiorniConEntrate, giorniConEntrate) : 0,
     percVarie: entrate ? varie / entrate : 0,

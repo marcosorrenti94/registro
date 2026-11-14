@@ -54,9 +54,8 @@ export const SUMMARY_ROWS = {
   uscite: 6,
   netto: 7,
   lordo: 10,
-  imponibile: 11,
-  iva: 12,
-  totaleConIva: 13,
+  iva: 11,
+  nettoDopoIva: 12,
   firstCategory: 16,
 } as const;
 
@@ -67,21 +66,6 @@ function styleHeader(ws: Worksheet, row: number, from: number, to: number) {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PLUM } };
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
   }
-}
-
-/** Formule IVA come testo Excel, in funzione della modalità scelta nelle Impostazioni. */
-function vatFormulas(settings: Database['settings'], lordoRef: string, rateRef: string) {
-  return settings.vatMode === 'scorporo'
-    ? {
-        imponibile: `ROUND(${lordoRef}/(1+${rateRef}),2)`,
-        iva: (impRef: string) => `${lordoRef}-${impRef}`,
-        totale: () => lordoRef,
-      }
-    : {
-        imponibile: lordoRef,
-        iva: () => `ROUND(${lordoRef}*${rateRef},2)`,
-        totale: (ivaRef: string) => `${lordoRef}+${ivaRef}`,
-      };
 }
 
 function buildMonthSheet(wb: Workbook, db: Database, year: number, month: number, categories: Category[]) {
@@ -167,17 +151,15 @@ function buildMonthSheet(wb: Workbook, db: Database, year: number, month: number
   put(SUMMARY_ROWS.carta, 'Totale Carta', T(L.income.carta));
   put(SUMMARY_ROWS.varie, 'Totale Varie', T(L.income.varie));
   put(SUMMARY_ROWS.uscite, 'Totale Uscite', T(L.totalExpense));
-  put(SUMMARY_ROWS.netto, 'RICAVO NETTO', `${V(SUMMARY_ROWS.entrate)}-${V(SUMMARY_ROWS.uscite)}`, true);
+  // Ricavo netto = Netto dopo IVA + Varie (le uscite non vengono sottratte)
+  put(SUMMARY_ROWS.netto, 'RICAVO NETTO', `${V(SUMMARY_ROWS.nettoDopoIva)}+${V(SUMMARY_ROWS.varie)}`, true);
 
   const rateRef = `'Dashboard Annuale'!$B$12`;
-  const vf = vatFormulas(db.settings, V(SUMMARY_ROWS.lordo), rateRef);
-  ws.getRow(9).getCell(lab).value =
-    `CALCOLATORE IVA (${db.settings.vatMode === 'scorporo' ? 'scorporo' : 'aggiunta'})`;
+  ws.getRow(9).getCell(lab).value = 'CALCOLATORE IVA';
   ws.getRow(9).getCell(lab).font = { bold: true };
   put(SUMMARY_ROWS.lordo, 'Contanti + Carta', `${T(L.income.contanti)}+${T(L.income.carta)}`);
-  put(SUMMARY_ROWS.imponibile, 'Imponibile', vf.imponibile);
-  put(SUMMARY_ROWS.iva, 'IVA', vf.iva(V(SUMMARY_ROWS.imponibile)));
-  put(SUMMARY_ROWS.totaleConIva, 'Totale con IVA', vf.totale(V(SUMMARY_ROWS.iva)));
+  put(SUMMARY_ROWS.iva, 'IVA', `ROUND(${V(SUMMARY_ROWS.lordo)}*${rateRef},2)`);
+  put(SUMMARY_ROWS.nettoDopoIva, 'Netto dopo IVA', `${V(SUMMARY_ROWS.lordo)}-${V(SUMMARY_ROWS.iva)}`);
 
   ws.getRow(15).getCell(lab).value = 'USCITE PER CATEGORIA';
   ws.getRow(15).getCell(lab).font = { bold: true };
@@ -210,7 +192,7 @@ function buildDashboard(ws: Worksheet, db: Database, year: number, categories: C
     'Varie',
     'Totale Uscite',
     'Ricavo Netto',
-    'Imponibile',
+    'Netto dopo IVA',
     'IVA',
   ];
   ws.getCell('A13').value = 'RIEPILOGO MENSILE';
@@ -224,7 +206,7 @@ function buildDashboard(ws: Worksheet, db: Database, year: number, categories: C
     SUMMARY_ROWS.varie,
     SUMMARY_ROWS.uscite,
     SUMMARY_ROWS.netto,
-    SUMMARY_ROWS.imponibile,
+    SUMMARY_ROWS.nettoDopoIva,
     SUMMARY_ROWS.iva,
   ];
   for (let m = 1; m <= 12; m++) {
@@ -254,9 +236,9 @@ function buildDashboard(ws: Worksheet, db: Database, year: number, categories: C
   kpi(4, 'Incasso Totale Annuale', `B${totalRow}`);
   kpi(5, 'Spese Totali Annuali', `F${totalRow}`);
   kpi(6, 'Ricavo Netto Annuale', `G${totalRow}`);
-  kpi(7, 'Fatturato Dichiarato', `H${totalRow}`);
+  kpi(7, 'Contanti + Carta', `C${totalRow}+D${totalRow}`);
   kpi(8, 'IVA Totale', `I${totalRow}`);
-  kpi(9, 'Netto dopo IVA', `G${totalRow}-I${totalRow}`);
+  kpi(9, 'Netto dopo IVA', `H${totalRow}`);
   kpi(10, 'Percentuale Varie', `IFERROR(E${totalRow}/B${totalRow},0)`, '0.00%');
 
   // Incasso medio giornaliero: somma dei totali giornalieri > 0 / giorni con entrate
@@ -278,8 +260,7 @@ function buildDashboard(ws: Worksheet, db: Database, year: number, categories: C
   ws.getCell('E6').value = { formula: `D${totalRow}` };
   ws.getCell('E6').numFmt = EURO;
 
-  ws.getCell('A12').value =
-    `Aliquota IVA (${db.settings.vatMode === 'scorporo' ? 'scorporo, IVA inclusa' : 'aggiunta'})`;
+  ws.getCell('A12').value = 'Aliquota IVA';
   ws.getCell('B12').value = db.settings.vatRateBps / 10_000;
   ws.getCell('B12').numFmt = '0.00%';
   ws.getCell('C12').value = 'Modifica l’aliquota qui: tutte le formule si aggiornano.';

@@ -44,22 +44,22 @@ describe('mergeDatabases', () => {
   it('prende le modifiche remote non toccate in locale', () => {
     const base = withDays(day('2026-01-13', 100));
     const remote = withDays(day('2026-01-13', 175));
-    remote.settings.vatMode = 'aggiunta';
+    remote.settings.vatRateBps = 1000;
     const r = mergeDatabases(base, withDays(day('2026-01-13', 100)), remote);
     expect(r.db.days['2026-01-13']?.contantiCents).toBe(175);
-    expect(r.db.settings.vatMode).toBe('aggiunta');
+    expect(r.db.settings.vatRateBps).toBe(1000);
   });
 });
 
 describe('mergeDatabases senza base comune', () => {
   it('un dispositivo nuovo non sovrascrive impostazioni e categorie personalizzate', () => {
     const remote = withDays(day('2026-01-13', 100));
-    remote.settings.vatMode = 'aggiunta';
+    remote.settings.vatRateBps = 1000;
     remote.categories.altro = { ...remote.categories.altro!, name: 'Varie spese' };
     // Dispositivo nuovo: valori predefiniti più un giorno inserito offline
     const local = withDays(day('2026-01-14', 200));
     const r = mergeDatabases(null, local, remote);
-    expect(r.db.settings.vatMode).toBe('aggiunta');
+    expect(r.db.settings.vatRateBps).toBe(1000);
     expect(r.db.categories.altro?.name).toBe('Varie spese');
     expect(Object.keys(r.db.days).sort()).toEqual(['2026-01-13', '2026-01-14']);
     expect(r.conflicts).toEqual([]);

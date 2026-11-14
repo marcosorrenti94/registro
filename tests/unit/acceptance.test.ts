@@ -27,6 +27,7 @@ interface MonthExpected {
   varie: number;
   uscite: number;
   netto: number;
+  nettoDopoIva: number;
   lordo: number;
   iva: number;
 }
@@ -36,7 +37,6 @@ interface Expected {
   mesi: MonthExpected[];
   mesiVuoti: number[];
   totaleAnno: Omit<MonthExpected, 'month'>;
-  ivaAggiuntaAnno: number;
   giorniConEntrate: number;
   incassoMedio: number;
   percVarie: string;
@@ -72,6 +72,7 @@ describe.skipIf(!available)('import del registro reale', () => {
         varie: s.varie,
         uscite: s.uscite,
         netto: s.netto,
+        nettoDopoIva: s.nettoDopoIva,
         lordo: s.lordoImponibile,
         iva: s.iva,
       }).toEqual({
@@ -81,6 +82,7 @@ describe.skipIf(!available)('import del registro reale', () => {
         varie: eur(row.varie),
         uscite: eur(row.uscite),
         netto: eur(row.netto),
+        nettoDopoIva: eur(row.nettoDopoIva),
         lordo: eur(row.lordo),
         iva: eur(row.iva),
       });
@@ -92,18 +94,28 @@ describe.skipIf(!available)('import del registro reale', () => {
     for (const m of exp.mesiVuoti) expect(months[m - 1]!.summary.giorniCompilati).toBe(0);
   });
 
-  it('totali annuali in scorporo', () => {
+  it('totali annuali', () => {
     const y = yearSummary(db, exp.anno);
     const t = exp.totaleAnno;
-    expect([y.entrate, y.contanti, y.carta, y.varie, y.uscite, y.netto, y.lordoImponibile, y.iva]).toEqual(
-      [t.entrate, t.contanti, t.carta, t.varie, t.uscite, t.netto, t.lordo, t.iva].map(eur),
+    expect([
+      y.entrate,
+      y.contanti,
+      y.carta,
+      y.varie,
+      y.uscite,
+      y.netto,
+      y.nettoDopoIva,
+      y.lordoImponibile,
+      y.iva,
+    ]).toEqual(
+      [t.entrate, t.contanti, t.carta, t.varie, t.uscite, t.netto, t.nettoDopoIva, t.lordo, t.iva].map(eur),
     );
   });
 
-  it('IVA in modalità aggiunta coincide con l’Excel originale', () => {
-    const y = yearSummary({ ...db, settings: { ...db.settings, vatMode: 'aggiunta' } }, exp.anno);
-    expect(y.iva).toBe(eur(exp.ivaAggiuntaAnno));
-    expect(y.fatturatoDichiarato).toBe(eur(exp.totaleAnno.lordo));
+  it('ricavo netto = netto dopo IVA + varie, senza sottrarre le uscite', () => {
+    const y = yearSummary(db, exp.anno);
+    expect(y.netto).toBe(y.nettoDopoIva + y.varie);
+    expect(y.nettoDopoIva).toBe(y.lordoImponibile - y.iva);
   });
 
   it('incasso medio giornaliero e % Varie', () => {

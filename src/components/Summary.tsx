@@ -6,17 +6,14 @@ import { relativeChange } from '@/lib/calc';
 import { formatEuro, formatPercent, formatRate } from '@/lib/money';
 import { InfoTip } from './ui/InfoTip';
 
-export function fatturatoTip(settings: Settings): string {
-  return settings.vatMode === 'scorporo'
-    ? `Contanti + carta al netto dell'IVA (scorporo al ${formatRate(settings.vatRateBps)}). Le varie sono escluse.`
-    : 'Contanti + carta, senza IVA aggiunta. Le varie sono escluse.';
+/** Spiegazioni delle formule, mostrate accanto ai valori. */
+export function ivaTip(settings: Pick<Settings, 'vatRateBps'>): string {
+  return `(Contanti + carta) × ${formatRate(settings.vatRateBps)}. Le varie sono escluse.`;
 }
 
-export function ivaTip(settings: Settings): string {
-  return settings.vatMode === 'scorporo'
-    ? `IVA già compresa negli incassi di contanti e carta: (contanti + carta) − (contanti + carta) / ${1 + settings.vatRateBps / 10000}. Le varie sono escluse.`
-    : `IVA aggiunta sopra gli incassi: (contanti + carta) × ${formatRate(settings.vatRateBps)}, come nel vecchio Excel. Le varie sono escluse.`;
-}
+export const NETTO_DOPO_IVA_TIP = "Contanti + carta meno l'IVA.";
+
+export const RICAVO_NETTO_TIP = 'Netto dopo IVA più le varie. Le uscite non vengono sottratte.';
 
 /** Variazione rispetto a un valore precedente, con segno e colore. */
 export function Delta({
@@ -122,7 +119,7 @@ export function PeriodPanel({
             value={formatEuro(summary.netto)}
             strong
             tone={summary.netto < 0 ? 'uscite' : undefined}
-            tip="Totale entrate meno totale uscite."
+            tip={RICAVO_NETTO_TIP}
           />
         </dl>
         {previous && previousLabel ? (
@@ -133,24 +130,14 @@ export function PeriodPanel({
         ) : null}
       </section>
       <section className="rounded-2xl border border-line bg-surface px-4 py-2 sm:px-5">
-        <h3 className="pt-2 pb-1 font-display text-lg font-semibold">
-          IVA {settings.vatMode === 'scorporo' ? 'in scorporo' : 'in aggiunta'}
-        </h3>
+        <h3 className="pt-2 pb-1 font-display text-lg font-semibold">IVA</h3>
         <dl>
           <ValueRow label="Contanti + carta" value={formatEuro(summary.lordoImponibile)} />
-          <ValueRow
-            label="Fatturato dichiarato"
-            value={formatEuro(summary.fatturatoDichiarato)}
-            tip={fatturatoTip(settings)}
-          />
           <ValueRow label={vatLabel} value={formatEuro(summary.iva)} tip={ivaTip(settings)} />
-          {settings.vatMode === 'aggiunta' ? (
-            <ValueRow label="Totale con IVA" value={formatEuro(summary.totaleConIva)} />
-          ) : null}
           <ValueRow
             label="Netto dopo IVA"
             value={formatEuro(summary.nettoDopoIva)}
-            tip="Ricavo netto meno l'IVA del periodo."
+            tip={NETTO_DOPO_IVA_TIP}
             tone={summary.nettoDopoIva < 0 ? 'uscite' : undefined}
           />
           <ValueRow

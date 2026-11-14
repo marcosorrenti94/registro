@@ -4,7 +4,6 @@ import { Archive, ArchiveRestore, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
-import { Switch } from '@/components/ui/Switch';
 import type { Category } from '@/domain/types';
 import { clearCache } from '@/data/cache';
 import { CATEGORY_SLOTS, OTHER_COLOR } from '@/lib/colors';
@@ -97,38 +96,27 @@ function VatRateInput({ bps }: { bps: number }) {
 }
 
 function VatSection() {
-  const { db, update } = useData();
+  const { db } = useData();
   const s = db.settings;
-  const scorporo = s.vatMode === 'scorporo';
+  const rate = formatRate(s.vatRateBps);
   return (
-    <Section
-      title="IVA"
-      description="Contanti e carta sono incassi lordi. Le varie non entrano mai nell'imponibile né nell'IVA."
-    >
+    <Section title="IVA" description="Le varie non entrano mai nel calcolo dell'IVA.">
       <div className="grid gap-5">
         <VatRateInput key={s.vatRateBps} bps={s.vatRateBps} />
-        <div className="flex items-start justify-between gap-4 rounded-2xl border border-line bg-surface p-4">
+        <dl className="grid gap-2 rounded-2xl border border-line bg-surface p-4 text-sm">
           <div>
-            <p id="vat-mode-label" className="font-semibold">
-              Modalità di calcolo IVA: {scorporo ? 'scorporo (IVA inclusa)' : 'aggiunta'}
-            </p>
-            <p className="mt-1 text-sm text-ink-2">
-              {scorporo
-                ? "L'IVA è già dentro gli incassi: IVA = lordo − lordo / (1 + aliquota). È il calcolo corretto per gli scontrini."
-                : "L'IVA viene aggiunta sopra gli incassi: IVA = lordo × aliquota. È il calcolo del vecchio Excel, utile per confronto."}
-            </p>
+            <dt className="font-semibold">IVA</dt>
+            <dd className="text-ink-2">(Contanti + carta) × {rate}</dd>
           </div>
-          <Switch
-            checked={scorporo}
-            label="Scorporo (IVA inclusa)"
-            onCheckedChange={(v) =>
-              void update(
-                (d) => void (d.settings.vatMode = v ? 'scorporo' : 'aggiunta'),
-                v ? 'IVA in scorporo' : 'IVA in aggiunta',
-              )
-            }
-          />
-        </div>
+          <div>
+            <dt className="font-semibold">Netto dopo IVA</dt>
+            <dd className="text-ink-2">(Contanti + carta) − IVA</dd>
+          </div>
+          <div>
+            <dt className="font-semibold">Ricavo netto</dt>
+            <dd className="text-ink-2">Netto dopo IVA + varie (le uscite non vengono sottratte)</dd>
+          </div>
+        </dl>
       </div>
     </Section>
   );

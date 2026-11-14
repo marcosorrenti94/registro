@@ -7,7 +7,7 @@ import {
   MethodsByMonthChart,
   TrendChart,
 } from '@/components/charts/Charts';
-import { Delta, ValueRow, fatturatoTip, ivaTip } from '@/components/Summary';
+import { Delta, NETTO_DOPO_IVA_TIP, ValueRow, ivaTip } from '@/components/Summary';
 import { availableYears, monthlySummaries, summarize, type PeriodSummary } from '@/lib/calc';
 import { MONTH_NAMES, formatDateIt, isIsoDate, parseIso, todayIso, yearRange } from '@/lib/dates';
 import { formatAmount, formatEuro, formatPercent, formatRate } from '@/lib/money';
@@ -163,26 +163,14 @@ export function DashboardPage() {
           }
         />
         <Hero label="Spese totali" value={kpi.uscite} tone="uscite" />
-        <Hero label="Ricavo netto" value={kpi.netto} sub="Entrate meno uscite" />
+        <Hero label="Ricavo netto" value={kpi.netto} sub="Netto dopo IVA più le varie" />
       </section>
 
       <dl className="mt-4 grid gap-x-8 rounded-2xl border border-line bg-surface px-4 py-2 sm:px-5 md:grid-cols-2">
         <div>
-          <ValueRow
-            label="Fatturato dichiarato"
-            value={formatEuro(kpi.fatturatoDichiarato)}
-            tip={fatturatoTip(s)}
-          />
-          <ValueRow
-            label={`IVA totale (${s.vatMode === 'scorporo' ? 'scorporo' : 'aggiunta'} ${formatRate(s.vatRateBps)})`}
-            value={formatEuro(kpi.iva)}
-            tip={ivaTip(s)}
-          />
-          <ValueRow
-            label="Netto dopo IVA"
-            value={formatEuro(kpi.nettoDopoIva)}
-            tip="Ricavo netto meno l'IVA."
-          />
+          <ValueRow label="Contanti + carta" value={formatEuro(kpi.lordoImponibile)} />
+          <ValueRow label={`IVA ${formatRate(s.vatRateBps)}`} value={formatEuro(kpi.iva)} tip={ivaTip(s)} />
+          <ValueRow label="Netto dopo IVA" value={formatEuro(kpi.nettoDopoIva)} tip={NETTO_DOPO_IVA_TIP} />
           <ValueRow
             label="Percentuale varie"
             value={formatPercent(kpi.percVarie)}
@@ -275,7 +263,7 @@ export function DashboardPage() {
           </ul>
         </div>
         <p className="mt-2 text-xs text-ink-3 sm:hidden">
-          Imponibile e IVA di ogni mese sono nella pagina del mese e nell'export Excel.
+          IVA e netto dopo IVA di ogni mese sono nella pagina del mese e nell'export Excel.
         </p>
 
         <div className="mt-3 hidden overflow-x-auto rounded-2xl border border-line bg-surface sm:block">
@@ -304,7 +292,7 @@ export function DashboardPage() {
                   Ricavo netto
                 </th>
                 <th scope="col" className="px-3 py-2.5 font-semibold">
-                  Imponibile
+                  Netto dopo IVA
                 </th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">
                   IVA
@@ -342,7 +330,7 @@ export function DashboardPage() {
                     <td className={clsx('num px-3 py-2 font-semibold', m.summary.netto < 0 && 'text-uscite')}>
                       {formatAmount(m.summary.netto)}
                     </td>
-                    <td className="num px-3 py-2">{formatAmount(m.summary.imponibile)}</td>
+                    <td className="num px-3 py-2">{formatAmount(m.summary.nettoDopoIva)}</td>
                     <td className="num px-4 py-2">{formatAmount(m.summary.iva)}</td>
                   </tr>
                 );
@@ -361,7 +349,7 @@ export function DashboardPage() {
                 <td className={clsx('num px-3 py-3', yearSum.netto < 0 && 'text-uscite')}>
                   {formatAmount(yearSum.netto)}
                 </td>
-                <td className="num px-3 py-3">{formatAmount(yearSum.imponibile)}</td>
+                <td className="num px-3 py-3">{formatAmount(yearSum.nettoDopoIva)}</td>
                 <td className="num px-4 py-3">{formatAmount(yearSum.iva)}</td>
               </tr>
             </tfoot>

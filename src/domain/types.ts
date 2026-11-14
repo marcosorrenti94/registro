@@ -32,12 +32,9 @@ export interface Category {
   archived: boolean;
 }
 
-export type VatMode = 'scorporo' | 'aggiunta';
-
 export interface Settings {
   /** Aliquota IVA in punti base: 2200 = 22%. Intero per evitare errori di arrotondamento. */
   vatRateBps: number;
-  vatMode: VatMode;
   businessName: string;
   /** Giorni di chiusura settimanale (0 = domenica … 6 = sabato). */
   closedWeekdays: number[];

@@ -8,6 +8,7 @@ import type { Database, DailyEntry, Expense } from '@/domain/types';
 import {
   availableYears,
   computeVat,
+  ricavoNetto,
   dayStatus,
   monthRows,
   monthlySummaries,
@@ -42,37 +43,29 @@ function db(entries: DailyEntry[], expenses: Expense[] = []): Database {
 }
 
 describe('computeVat', () => {
-  const scorporo = { vatRateBps: 2200, vatMode: 'scorporo' as const };
-  const aggiunta = { vatRateBps: 2200, vatMode: 'aggiunta' as const };
+  const iva22 = { vatRateBps: 2200 };
 
-  // lordo imponibile = contanti + carta, in centesimi
+  // IVA = (contanti + carta) × 22%, arrotondata al centesimo; netto dopo IVA = (contanti + carta) − IVA
   it.each([
-    [122000, 22000],
-    [100000, 18033],
-    [12345, 2226],
-    [99999, 18033],
-  ])('scorporo 22%% su %i → IVA %i', (lordo, iva) => {
-    const r = computeVat(lordo, scorporo);
+    [122000, 26840, 95160],
+    [100000, 22000, 78000],
+    [12345, 2716, 9629],
+    [99999, 22000, 77999],
+  ])('su %i centesimi → IVA %i, netto dopo IVA %i', (lordo, iva, netto) => {
+    const r = computeVat(lordo, iva22);
     expect(r.iva).toBe(iva);
-    expect(r.imponibile + r.iva).toBe(lordo);
-    expect(r.totaleConIva).toBe(lordo);
-  });
-
-  it.each([
-    [122000, 26840],
-    [100000, 22000],
-    [12345, 2716],
-    [99999, 22000],
-  ])('aggiunta 22%% su %i → IVA %i', (lordo, iva) => {
-    const r = computeVat(lordo, aggiunta);
-    expect(r.iva).toBe(iva);
-    expect(r.imponibile).toBe(lordo);
-    expect(r.totaleConIva).toBe(lordo + iva);
+    expect(r.nettoDopoIva).toBe(netto);
+    expect(r.nettoDopoIva + r.iva).toBe(lordo);
   });
 
   it('gestisce aliquote diverse e importi nulli', () => {
-    expect(computeVat(11000, { vatRateBps: 1000, vatMode: 'scorporo' }).iva).toBe(1000);
-    expect(computeVat(0, scorporo)).toEqual({ lordoImponibile: 0, imponibile: 0, iva: 0, totaleConIva: 0 });
+    expect(computeVat(11000, { vatRateBps: 1000 }).iva).toBe(1100);
+    expect(computeVat(0, iva22)).toEqual({ lordoImponibile: 0, iva: 0, nettoDopoIva: 0 });
+  });
+
+  it('ricavo netto = netto dopo IVA + varie', () => {
+    // contanti 300 + carta 700 = 1.000 → IVA 220 → netto dopo IVA 780 → + varie 150 = 930
+    expect(ricavoNetto(30000, 70000, 15000, iva22)).toBe(93000);
   });
 });
 
@@ -93,15 +86,17 @@ describe('summarize', () => {
     expect(s.varie).toBe(7500);
     expect(s.entrate).toBe(45500);
     expect(s.uscite).toBe(36847);
-    expect(s.netto).toBe(8653);
+    // (38000 − 8360) + varie 7500: le uscite non vengono sottratte
+    expect(s.netto).toBe(37140);
     expect(s.uscitePerCategoria).toEqual({ pulizie: 4000, prodotti: 32847 });
   });
 
-  it('esclude Varie da imponibile e IVA', () => {
+  it("esclude Varie dall'IVA", () => {
     const s = summarize(data, monthRange(2026, 1));
     expect(s.lordoImponibile).toBe(38000);
-    expect(s.fatturatoDichiarato).toBe(s.imponibile);
-    expect(s.nettoDopoIva).toBe(s.netto - s.iva);
+    expect(s.iva).toBe(8360);
+    expect(s.nettoDopoIva).toBe(29640);
+    expect(s.netto).toBe(s.nettoDopoIva + s.varie);
   });
 
   it('calcola incasso medio giornaliero e giorni compilati', () => {

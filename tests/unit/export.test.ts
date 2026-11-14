@@ -69,23 +69,15 @@ describe('export Excel', () => {
     expect(formula(gen.getCell('E14').value)).toBe('IF(SUM(B14:D14)=0,"",SUM(B14:D14))');
     expect(formula(gen.getCell('B33').value)).toBe('SUM(B2:B32)');
     expect(formula(gen.getCell('O13').value)).toBe('IF(SUM(G13:N13)=0,"",SUM(G13:N13))');
-    expect(formula(gen.getCell('R7').value)).toBe('R2-R6');
-    expect(formula(gen.getCell('R11').value)).toBe("ROUND(R10/(1+'Dashboard Annuale'!$B$12),2)");
+    // Ricavo netto = netto dopo IVA + varie; IVA = (contanti + carta) × aliquota; netto dopo IVA = lordo − IVA
+    expect(formula(gen.getCell('R7').value)).toBe('R12+R5');
+    expect(formula(gen.getCell('R10').value)).toBe('B33+C33');
+    expect(formula(gen.getCell('R11').value)).toBe("ROUND(R10*'Dashboard Annuale'!$B$12,2)");
+    expect(formula(gen.getCell('R12').value)).toBe('R10-R11');
     const dash = wb.getWorksheet('Dashboard Annuale')!;
     expect(formula(dash.getCell('B15').value)).toBe("'Gennaio'!$R$2");
     expect(formula(dash.getCell('B27').value)).toBe('SUM(B15:B26)');
     expect(dash.getCell('B12').value).toBeCloseTo(0.22);
-  });
-
-  it('in modalità aggiunta scrive le formule del vecchio Excel', async () => {
-    const db = sample();
-    db.settings.vatMode = 'aggiunta';
-    const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(await exportYearXlsx(db, 2026));
-    const gen = wb.getWorksheet('Gennaio')!;
-    expect((gen.getCell('R12').value as { formula: string }).formula).toBe(
-      "ROUND(R10*'Dashboard Annuale'!$B$12,2)",
-    );
   });
 
   it('reimportato restituisce gli stessi dati', async () => {

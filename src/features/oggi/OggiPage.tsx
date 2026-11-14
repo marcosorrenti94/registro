@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/Dialog';
 import type { Cents, Expense, IsoDate } from '@/domain/types';
 import { deleteDraft, readDraft, writeDraft } from '@/data/cache';
-import { dayRow } from '@/lib/calc';
+import { dayRow, ricavoNetto } from '@/lib/calc';
 import {
   MONTH_NAMES,
   WEEKDAY_NAMES,
@@ -323,7 +323,10 @@ function DayEditor({ date }: { date: IsoDate }) {
             />
           </div>
           <p className="mt-2 text-xs opacity-80">
-            Netto del giorno <span className="num font-semibold">{formatEuro(entrate - uscite)}</span>
+            Ricavo netto del giorno{' '}
+            <span className="num font-semibold">
+              {formatEuro(ricavoNetto(form.contanti, form.carta, form.varie, db.settings))}
+            </span>
           </p>
         </section>
       </div>
@@ -347,7 +350,7 @@ function DayEditor({ date }: { date: IsoDate }) {
           swatch="var(--varie)"
           value={form.varie}
           onChange={(v) => set('varie', v)}
-          hint="Già tassate altrove: non entrano nell'imponibile né nell'IVA."
+          hint="Già tassate altrove: non entrano nel calcolo dell'IVA."
         />
       </div>
 
